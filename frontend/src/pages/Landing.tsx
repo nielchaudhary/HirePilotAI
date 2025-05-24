@@ -45,9 +45,9 @@ export const Landing = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, ease: "easeIn" }}
-            className="bg-gradient-to-r from-[#0070F3] to-[#38bdf8] text-transparent bg-clip-text text-3xl sm:text-4xl md:text-4xl font-bold font-serif"
+            className="text-[#ACFFAC] font-bold text-3xl sm:text-3xl md:text-3xl font-mono"
           >
-            Meet HirePilot AI
+            Welcome to HirePilot AI
           </motion.h1>
           <motion.p
             initial={{ opacity: 0 }}
