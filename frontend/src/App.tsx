@@ -1,8 +1,15 @@
+import { Route, Routes, BrowserRouter } from "react-router-dom";
+import { Toaster } from "sonner";
+import { Landing } from "./pages/Landing";
+
 function App() {
   return (
-    <>
-      <div className="text-3xl font-bold underline">Hello from HirePilot</div>
-    </>
+    <BrowserRouter>
+      <Toaster richColors position="top-center" />
+      <Routes>
+        <Route path="/" element={<Landing />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
