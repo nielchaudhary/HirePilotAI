@@ -19,13 +19,16 @@ export const Landing = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!isNullOrUndefined(file) && file.type === "application/pdf") {
-      toast.success(`${file.name} uploaded successfully`);
+      toast.success(`${file.name} Uploaded Successfully`);
 
       navigate("/interview", {
-        state: file,
+        state: {
+          file,
+          loading: true,
+        },
       });
     } else {
-      toast.error("Please select a valid PDF file.");
+      toast.error("Please Select a Valid PDF File");
     }
     e.target.value = "";
   };
