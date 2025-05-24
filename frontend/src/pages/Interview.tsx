@@ -1,6 +1,7 @@
 import { Spotlight } from "../components/Spotlight";
 import { useState, useEffect } from "react";
 import { MultiStepLoader } from "../components/MultiStepLoader";
+import { Helmet } from "react-helmet";
 
 export const Interview = () => {
   const loadingStates = [
@@ -33,14 +34,19 @@ export const Interview = () => {
   }, [multistepLoader]);
 
   return (
-    <div className="relative bg-black flex flex-col items-center justify-center min-h-screen w-screen overflow-x-hidden overflow-y-hidden py-10 max-width-7xl">
-      <Spotlight />
-      {multistepLoader && (
-        <MultiStepLoader
-          loadingStates={loadingStates}
-          loading={multistepLoader}
-        />
-      )}
-    </div>
+    <>
+      <Helmet>
+        <title>HirePilot • Interview</title>
+      </Helmet>
+      <div className="relative bg-black flex flex-col items-center justify-center min-h-screen w-screen overflow-x-hidden overflow-y-hidden py-10 max-width-7xl">
+        <Spotlight />
+        {multistepLoader && (
+          <MultiStepLoader
+            loadingStates={loadingStates}
+            loading={multistepLoader}
+          />
+        )}
+      </div>
+    </>
   );
 };
