@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { IconSend, IconFile, IconUpload } from "@tabler/icons-react";
+import { IconSend, IconUpload } from "@tabler/icons-react";
 import { BASE_URL } from "../utils";
 
 interface Message {
@@ -221,19 +221,16 @@ export const Chat = (props: { pdfUrl: string; parsedResume: string }) => {
   };
 
   return (
-    <div className="flex flex-col h-[90vh] w-full max-w-7xl bg-white rounded-xl shadow-2xl overflow-hidden">
+    <div className="flex flex-col h-[90vh] md:h-[80vh] lg:h-[90vh] md:w-5xl w-full max-w-7xl bg-white rounded-xl shadow-2xl overflow-hidden">
       {/* Common Header */}
       <header className="bg-gradient-to-r from-black to-gray-50 to-black text-white p-6 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <IconFile className="w-5 h-5 text-blue-600" />
-          <h2 className="text-xl font-bold font-serif">Resume</h2>
-        </div>
+        <div className="flex items-center gap-2"></div>
         <div className="text-right">
           <h1 className="text-xl text-black font-serif font-bold">
             HirePilot AI
           </h1>
           <p className="text-black text-sm mt-1 font-bold">
-            Your AI Interview Assistant
+            Your AI Interviewer
           </p>
         </div>
       </header>
@@ -321,7 +318,7 @@ export const Chat = (props: { pdfUrl: string; parsedResume: string }) => {
           {/* Input Form */}
           <form
             onSubmit={handleSubmit}
-            className="border-t border-gray-200 bg-white p-6"
+            className="border-t border-gray-200 bg-[#F7F7F7] p-6"
           >
             <div className="flex space-x-3">
               <input
@@ -334,7 +331,7 @@ export const Chat = (props: { pdfUrl: string; parsedResume: string }) => {
                     : "Please wait for the interview to start..."
                 }
                 disabled={!isInterviewStarted || isLoading}
-                className="flex-1 rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 transition-all overflow-y-auto disabled:opacity-50"
+                className="flex-1 rounded-2xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 transition-all overflow-y-auto disabled:opacity-50"
               />
               <button
                 type="submit"
