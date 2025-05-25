@@ -1,11 +1,24 @@
 import { isEmpty } from "lodash";
-import { isNullOrUndefined, parseResumeFile } from "../utils/data-helpers";
+import { isNullOrUndefined } from "../utils/data";
 import { Logger } from "../utils/logger";
+import ResumeParser from "simple-resume-parser";
 import { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
 
 const logger = new Logger("resume-parser");
+
+const parseResumeFile = async (resumePath: string) => {
+  try {
+    const resumeParser = new ResumeParser(resumePath);
+    const parsedResume = await resumeParser.parseToJSON();
+    logger.info("Resume parsed successfully", parsedResume);
+    return parsedResume;
+  } catch (error) {
+    logger.error("Could not parse resume file due to ", error);
+    throw error;
+  }
+};
 
 export const parseResumePostHandler = async (req: Request, res: Response) => {
   logger.info("Received Resume, Parsing the Information");
