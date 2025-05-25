@@ -5,7 +5,8 @@ import { motion } from "framer-motion";
 import { AuroraText } from "../components/AuroraText";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { isNullOrUndefined } from "../utils";
+import { BASE_URL, isNullOrUndefined } from "../utils";
+import axios from "axios";
 
 export const Landing = () => {
   const navigate = useNavigate();
@@ -16,16 +17,31 @@ export const Landing = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
+    if (!isNullOrUndefined(file) && file.size > 5 * 1024 * 1024) {
+      toast.error("Please attach a file smaller than 5MB");
+      return;
+    }
     if (!isNullOrUndefined(file) && file.type === "application/pdf") {
       toast.success(`${file.name} Uploaded Successfully`);
 
       const pdfUrl = URL.createObjectURL(file);
 
+      const formData = new FormData();
+      formData.append("resume", file);
+
+      const response = await axios.post(BASE_URL + "/parse", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
       navigate("/interview", {
         state: {
           pdfUrl,
+          parsedResume: response.data,
         },
       });
     } else {

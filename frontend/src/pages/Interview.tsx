@@ -25,7 +25,10 @@ export const Interview = () => {
 
   const [multistepLoader, setMultiStepLoader] = useState<boolean>(true);
 
-  const pdfUrl = useLocation().state?.pdfUrl;
+  const { pdfUrl, parsedResume } = useLocation().state as {
+    pdfUrl: string;
+    parsedResume: string;
+  };
 
   useEffect(() => {
     if (multistepLoader) {
@@ -48,7 +51,7 @@ export const Interview = () => {
             loading={multistepLoader}
           />
         ) : (
-          <Chat pdfUrl={pdfUrl} />
+          <Chat pdfUrl={pdfUrl} parsedResume={parsedResume} />
         )}
       </div>
     </>
