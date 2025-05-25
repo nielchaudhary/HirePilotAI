@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { File, Upload, Send } from "lucide-react";
+import { IconSend, IconFile, IconUpload } from "@tabler/icons-react";
 
 interface Message {
   id: string;
@@ -8,12 +8,12 @@ interface Message {
   timestamp: Date;
 }
 
-export const Chat = () => {
+export const Chat = (props: { pdfUrl: string }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const pdfUrl = "";
+  const pdfUrl = props.pdfUrl ?? "";
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -45,33 +45,34 @@ export const Chat = () => {
   };
 
   return (
-    <div className="flex h-[90vh] w-full max-w-7xl bg-white rounded-xl shadow-2xl overflow-hidden">
+    <div className="flex h-[90vh] w-full max-w-7xl bg-white rounded-xl shadow-2xl overflow-hidden bg-black">
       {/* PDF Viewer */}
       <div className="w-1/2 border-r border-gray-200 flex flex-col">
-        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-slate-50 to-gray-50">
-          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <File className="w-5 h-5 text-blue-600" />
-            Your Resume
+        {/* PDF Header */}
+        <div className="p-6 border-b border-white-300 bg-white">
+          <h2 className="text-xl font-bold text-black flex items-center gap-2">
+            <IconFile className="w-5 h-5 text-blue-600" />
+            Resume
           </h2>
         </div>
         <div className="flex-1 overflow-hidden bg-gray-50">
           {pdfUrl ? (
             <iframe
-              src={pdfUrl}
+              src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
               className="w-full h-full border-0"
               title="PDF Viewer"
             />
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-gray-500 space-y-6 p-8">
+            <div className="h-full w-full  flex flex-col items-center justify-center text-gray-500 space-y-6 p-8">
               <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center">
-                <Upload className="w-8 h-8 text-gray-400" />
+                <IconUpload className="w-8 h-8 text-gray-400" />
               </div>
               <div className="text-center space-y-2">
                 <p className="text-lg font-medium text-gray-600">
                   No document uploaded
                 </p>
                 <p className="text-sm text-gray-400">
-                  Upload a PDF to get started with AI assistance
+                  Upload a PDF to get started with the interview process
                 </p>
               </div>
             </div>
@@ -80,22 +81,22 @@ export const Chat = () => {
       </div>
 
       {/* Chat Interface */}
-      <div className="w-1/2 flex flex-col bg-white">
+      <div className="w-1/2 flex flex-col bg-black">
         {/* Chat Header */}
         <header className="bg-gradient-to-r from-black to-gray-50 text-white p-6">
-          <h1 className="text-2xl font-bold">HirePilot AI</h1>
-          <p className="text-blue-100 text-sm mt-1">
-            Your intelligent career assistant
+          <h1 className="text-xl font-serif font-bold">HirePilot AI</h1>
+          <p className="text-[#F7F7F7] text-sm mt-1 font-bold">
+            Your AI Interview Assistant
           </p>
         </header>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-[#F7F7F7]">
           {messages.length === 0 ? (
             <div className="h-full flex items-center justify-center">
               <div className="text-center space-y-4 max-w-md">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                  <Send className="w-8 h-8 text-blue-600" />
+                <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto">
+                  <IconSend className="w-8 h-8 text-blue-600" />
                 </div>
                 <div></div>
               </div>
@@ -112,8 +113,8 @@ export const Chat = () => {
                   <div
                     className={`max-w-[85%] rounded-2xl p-4 shadow-sm ${
                       message.role === "user"
-                        ? "bg-blue-600 text-white"
-                        : "bg-white border border-gray-200 text-gray-800"
+                        ? "bg-white text-black"
+                        : "bg-gradient-to-r from-[#43C6AC] to-[#F8FFAE] border border-gray-200 text-gray-800 font-serif"
                     }`}
                   >
                     <div className="whitespace-pre-wrap leading-relaxed">
@@ -121,9 +122,7 @@ export const Chat = () => {
                     </div>
                     <div
                       className={`text-xs mt-2 ${
-                        message.role === "user"
-                          ? "text-blue-100"
-                          : "text-gray-500"
+                        message.role === "user" ? "text-black" : "text-black"
                       }`}
                     >
                       {message.timestamp.toLocaleTimeString([], {
@@ -149,7 +148,7 @@ export const Chat = () => {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
+              placeholder="Type your response here..."
               className="flex-1 rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 transition-all"
             />
             <button
@@ -157,8 +156,7 @@ export const Chat = () => {
               disabled={!input.trim()}
               className="bg-blue-600 text-white rounded-xl px-6 py-3 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 font-medium"
             >
-              <Send className="w-4 h-4" />
-              Send
+              <IconSend className="w-4 h-4" />
             </button>
           </div>
         </form>

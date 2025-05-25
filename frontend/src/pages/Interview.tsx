@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { MultiStepLoader } from "../components/MultiStepLoader";
 import { Helmet } from "react-helmet";
 import { Chat } from "../components/Chat";
+import { useLocation } from "react-router-dom";
 
 export const Interview = () => {
   const loadingStates = [
@@ -12,17 +13,19 @@ export const Interview = () => {
       text: "Analyzing Your Resume",
     },
     {
-      text: "Transcribing Your Interview",
-    },
-    {
-      text: "Analyzing Your Interview",
+      text: "Extracting Information",
     },
     {
       text: "Generating Interview Questions",
     },
+    {
+      text: "Analyzing Your Interview",
+    },
   ];
 
   const [multistepLoader, setMultiStepLoader] = useState<boolean>(true);
+
+  const pdfUrl = useLocation().state?.pdfUrl;
 
   useEffect(() => {
     if (multistepLoader) {
@@ -45,7 +48,7 @@ export const Interview = () => {
             loading={multistepLoader}
           />
         ) : (
-          <Chat />
+          <Chat pdfUrl={pdfUrl} />
         )}
       </div>
     </>

@@ -21,10 +21,11 @@ export const Landing = () => {
     if (!isNullOrUndefined(file) && file.type === "application/pdf") {
       toast.success(`${file.name} Uploaded Successfully`);
 
+      const pdfUrl = URL.createObjectURL(file);
+
       navigate("/interview", {
         state: {
-          pdfUrl: URL.createObjectURL(file),
-          loading: true,
+          pdfUrl,
         },
       });
     } else {
