@@ -2,6 +2,7 @@ import { Route, Routes, BrowserRouter } from "react-router-dom";
 import { Toaster } from "sonner";
 import { Landing } from "./pages/Landing";
 import { Interview } from "./pages/Interview";
+import { Dummy } from "./pages/Dummy";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/interview" element={<Interview />} />
+        <Route path="/dummy" element={<Dummy />} />
       </Routes>
     </BrowserRouter>
   );
