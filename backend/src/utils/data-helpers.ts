@@ -1,6 +1,8 @@
 import { Logger } from "./logger";
 import dotenv from "dotenv";
 import axios from "axios";
+import ResumeParser from "simple-resume-parser";
+
 dotenv.config();
 
 const logger = new Logger("data-helpers");
@@ -71,5 +73,17 @@ export const fetchOpenRouterChatCompletion = async (context: string) => {
     }
   } finally {
     reader.cancel();
+  }
+};
+
+export const parseResumeFile = async (resumePath: string) => {
+  try {
+    const resumeParser = new ResumeParser(resumePath);
+    const parsedResume = await resumeParser.parseToJSON();
+    logger.info("Resume parsed successfully", parsedResume);
+    return parsedResume;
+  } catch (error) {
+    logger.error("Could not parse resume file due to ", error);
+    throw error;
   }
 };
