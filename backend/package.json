@@ -19,19 +19,23 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@prisma/client": "6.8.2",
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.2",
     "@types/lodash": "^4.17.17",
+    "@types/pg": "^8.15.2",
     "axios": "^1.9.0",
     "cross-env": "^7.0.3",
     "debug": "^4.4.1",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-router": "^0.0.1",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "pg": "^8.16.0"
   },
   "devDependencies": {
     "madge": "^8.0.0",
+    "prisma": "^6.8.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.3"
   }
