@@ -23,7 +23,7 @@ export const Landing = () => {
 
       navigate("/interview", {
         state: {
-          file,
+          pdfUrl: URL.createObjectURL(file),
           loading: true,
         },
       });
