@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { parseResumePostHandler } from "./api/resume-parser";
-import { openaiCompletionPostHandler } from "./api/openai";
+import { chatCompletionPostHandler } from "./api/openai";
 import { transcriptsPostHandler } from "./api/transcripts";
 
 const router = Router();
 
-router.post("/chat", openaiCompletionPostHandler);
+router.post("/chat", chatCompletionPostHandler);
 router.post("/parse", parseResumePostHandler);
 router.post("/transcripts", transcriptsPostHandler);
 

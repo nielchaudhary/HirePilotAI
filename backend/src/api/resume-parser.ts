@@ -5,20 +5,9 @@ import ResumeParser from "simple-resume-parser";
 import { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
+import { generateCompletionUsingAI } from "../utils/api-helpers";
 
 const logger = new Logger("resume-parser");
-
-const parseResumeFile = async (resumePath: string) => {
-  try {
-    const resumeParser = new ResumeParser(resumePath);
-    const parsedResume = await resumeParser.parseToJSON();
-    logger.info("Resume parsed successfully", parsedResume);
-    return parsedResume;
-  } catch (error) {
-    logger.error("Could not parse resume file due to ", error);
-    throw error;
-  }
-};
 
 export const parseResumePostHandler = async (req: Request, res: Response) => {
   logger.info("Received Resume, Parsing the Information");
@@ -47,16 +36,14 @@ export const parseResumePostHandler = async (req: Request, res: Response) => {
 
     await resume.mv(filePath);
 
-    const parsedResume = await parseResumeFile(filePath);
-
-    logger.info(`Resume saved to ${filePath}`);
+    const parsedResume = await generateCompletionUsingAI(filePath);
 
     res.status(200).json({
       parsedResume,
     });
   } catch (error) {
-    logger.error(`Failed to parse resume due to ${error}`);
-    res.status(500).json({ error: "Failed to parse resume" });
+    logger.error(`failed to parse resume due to ${error}`);
+    res.status(500).json({ error: "failed to parse resume" });
     return;
   }
 };
