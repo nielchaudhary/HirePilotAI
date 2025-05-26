@@ -1,8 +1,10 @@
 import { isEmpty } from "lodash";
 import {
+  feedbackPrompt,
   IInterviewTranscript,
   isNullOrUndefined,
   OPEROUTER_BASE_URL,
+  resumeParsingPrompt,
   ROLE,
 } from "./data";
 import { Response as ExpressResponse } from "express";
@@ -194,17 +196,12 @@ export const generateCompletionUsingAI = async (
     throw new Error("OPENROUTER_API_KEY is not defined");
   }
 
-  const prompt = `Extract the following information from this resume and return it as JSON:
-        {
-            "name" : "",
-            "email" : "",
-            "phone" : "",
-            
-        }
-        Resume Text:
-        ${resumeText}
+  let systemContent = resumeParsingPrompt;
 
-        `;
+  !isNullOrUndefined(generateFeedback) && generateFeedback
+    ? (systemContent +=
+        feedbackPrompt + `Interview Transcript : ${JSON.stringify(messages)}`)
+    : (systemContent += `Resume Details : ${resumeText}`);
 
   const completions = await openai.chat.completions.create({
     model: "gpt-4o-mini",
@@ -212,7 +209,7 @@ export const generateCompletionUsingAI = async (
     messages: [
       {
         role: "user",
-        content: prompt,
+        content: systemContent,
       },
     ],
   });
