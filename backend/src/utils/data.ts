@@ -1,8 +1,3 @@
-import dotenv from "dotenv";
-import { Logger } from "./logger";
-
-dotenv.config();
-
 export interface IMessage {
   id: string;
   role: ROLE;
@@ -24,6 +19,12 @@ export enum ROLE {
 export interface IInterviewTranscript {
   id: string;
   interviewId: string;
-  name: string;
+  userInfo: IUserInfo;
   messages: IMessage[];
+}
+
+export interface IUserInfo {
+  name: string;
+  email: string;
+  phone: string;
 }

@@ -19,6 +19,7 @@ datasource db {
 model Interview {
   id          Int      @id @default(autoincrement())
   interviewId String   @unique
-  messages    Json   // Array of { role: "user" | "system", content: string, timestamp: DateTime }
+  messages    Json     @default("[]")
+  userInfo    Json     @default("{\"name\": \"\", \"number\": \"\", \"email\": \"\"}")
   createdAt   DateTime @default(now())
 }
