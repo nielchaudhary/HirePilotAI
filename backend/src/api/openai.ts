@@ -14,6 +14,7 @@ export const openaiCompletionPostHandler = async (
   res: Response
 ) => {
   try {
+    logger.info("Received request for openai completion");
     const { message, resume, isInitialLoad } = req.body as {
       message: string;
       resume?: string;
@@ -46,18 +47,18 @@ export const openaiCompletionPostHandler = async (
       },
     ];
 
-    if (isInitialLoad) {
-      messages.push({
-        role: "user",
-        content:
-          "Please start the interview with a greeting and your first question based on my resume.",
-      });
-    } else {
-      messages.push({
-        role: "user",
-        content: message,
-      });
-    }
+    isInitialLoad
+      ? messages.push({
+          role: "user",
+          content:
+            "Please start the interview with a greeting and your first question based on my resume.",
+        })
+      : messages.push({
+          role: "user",
+          content: message,
+        });
+
+    /*used openrouter's streaming API, please refer to : https://openrouter.ai/docs/api-reference/streaming*/
 
     const response = await fetch(OPEROUTER_BASE_URL, {
       method: "POST",
@@ -67,20 +68,20 @@ export const openaiCompletionPostHandler = async (
         "X-Title": "HirePilot",
       },
       body: JSON.stringify({
-        model: "openai/gpt-4o-mini",
+        model: "deepseek/deepseek-chat-v3-0324:free",
         messages,
         stream: true,
       }),
     });
 
     if (isNullOrUndefined(response.body)) {
-      logger.error("Response body is not readable");
       throw new Error("Response body is not readable");
     }
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
+    let fullResponse = ""; // To accumulate the full response
 
     try {
       while (true) {
@@ -109,6 +110,7 @@ export const openaiCompletionPostHandler = async (
               const parsed = JSON.parse(data);
               const content = parsed.choices?.[0]?.delta?.content;
               if (content) {
+                fullResponse += content;
                 res.write(content);
               }
             } catch (e) {
