@@ -33,11 +33,6 @@ export const chatCompletionPostHandler = async (
       isInitialLoad: boolean;
       userInfo?: IUserInfo;
     };
-    // const validation = validateRequest(message, userInfo, isInitialLoad);
-    // if (!validation.valid) {
-    //   res.status(validation.status!).json({ error: validation.error });
-    //   return;
-    // }
 
     setupResponseHeaders(res);
 

@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@source '../node_modules/@llamaindex/chat-ui/**/*.{ts,tsx}';
+
 
 @theme inline {
   --animate-aurora: aurora 8s ease-in-out infinite alternate;
@@ -26,3 +28,29 @@
     }
   }
 }
+
+
+.chat-messages-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-messages-container::-webkit-scrollbar-track {
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+.chat-messages-container::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+.chat-messages-container::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+.chat-messages-container {
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 #1a1a1a;
+}
+
+
