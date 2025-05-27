@@ -133,12 +133,13 @@ This project uses **Supabase (Postgres)** + **Prisma** for the database layer. F
 
 ## 1. Set Up Supabase Postgres Database
 1. Create a new project at [Supabase Dashboard](https://app.supabase.com/projects).
-2. Go to **Settings → Database** and copy your connection string (looks like):
+2. Go to **Settings → Database**, click on "Connect" and copy your connection string (looks like):
    ```
    postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
    ```
 
 ## 2. Configure Environment
+
 
 DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres"
 
