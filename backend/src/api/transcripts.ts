@@ -2,7 +2,12 @@ import { Logger } from "../utils/logger";
 import { Request, Response } from "express";
 import { isEmpty } from "lodash";
 import { v4 as uuidv4 } from "uuid";
-import { isNullOrUndefined } from "../utils/data";
+import {
+  isNullOrUndefined,
+  IUserFeedback,
+  IUserInfo,
+  ROLE,
+} from "../utils/data";
 import { PrismaClient } from "../generated/prisma";
 
 const prisma = new PrismaClient();
@@ -12,12 +17,14 @@ const logger = new Logger("transcripts");
 export const transcriptsPostHandler = async (req: Request, res: Response) => {
   logger.info("Received request for transcripts");
   try {
-    const { messages } = req.body as {
+    const { messages, userInfo, feedback } = req.body as {
       messages: {
-        role: "user" | "system";
+        role: ROLE;
         content: string;
         timestamp: Date;
       }[];
+      userInfo: IUserInfo;
+      feedback: IUserFeedback;
     };
 
     if (isNullOrUndefined(messages) || isEmpty(messages)) {
@@ -30,6 +37,8 @@ export const transcriptsPostHandler = async (req: Request, res: Response) => {
       data: {
         interviewId,
         messages,
+        userInfo: JSON.stringify(userInfo),
+        feedback: JSON.stringify(feedback),
       },
     });
 

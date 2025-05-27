@@ -1,7 +1,6 @@
 import { isEmpty } from "lodash";
-import { isNullOrUndefined } from "../utils/data";
+import { isNullOrUndefined, IUserInfo } from "../utils/data";
 import { Logger } from "../utils/logger";
-import ResumeParser from "simple-resume-parser";
 import { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
@@ -36,11 +35,23 @@ export const parseResumePostHandler = async (req: Request, res: Response) => {
 
     await resume.mv(filePath);
 
-    const parsedResume = await generateCompletionUsingAI(filePath);
+    //get userinformation and the skills from the resume
+    const parsedResume = (await generateCompletionUsingAI(filePath)) as string;
 
-    res.status(200).json({
-      parsedResume,
-    });
+    const { name, email, phone, skills, experience, projects } = JSON.parse(
+      parsedResume
+    ) as IUserInfo;
+
+    const userInfo: IUserInfo = {
+      name,
+      email,
+      phone,
+      skills,
+      experience,
+      projects,
+    };
+    res.status(200).send(userInfo);
+    return;
   } catch (error) {
     logger.error(`failed to parse resume due to ${error}`);
     res.status(500).json({ error: "failed to parse resume" });

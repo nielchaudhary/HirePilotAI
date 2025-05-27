@@ -1,4 +1,5 @@
 import { BASE_URL } from "../utils";
+import axios from "axios";
 
 export interface Message {
   id: string;
@@ -9,7 +10,7 @@ export interface Message {
 
 export interface ChatProps {
   pdfUrl: string;
-  parsedResume: string;
+  userInfo: IUserInfo;
 }
 
 export const THINKING_MESSAGE = "HirePilot is thinking";
@@ -45,7 +46,7 @@ export const createErrorMessage = (error: string): Message =>
 export const chatAPI = {
   sendMessage: async (
     message: string,
-    resume?: string,
+    userInfo?: IUserInfo,
     isInitialLoad = false
   ) => {
     const response = await fetch(`${BASE_URL}/chat`, {
@@ -53,7 +54,7 @@ export const chatAPI = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message,
-        ...(resume && { resume }),
+        ...(userInfo && { userInfo }),
         isInitialLoad,
       }),
     });
@@ -65,7 +66,69 @@ export const chatAPI = {
     return response;
   },
 
-  saveTranscript: async (messages: Message[]) => {
-    return axios.post(`${BASE_URL}/transcripts`, { messages });
+  saveTranscript: async (
+    messages: Message[],
+    userInfo: IUserInfo,
+    feedback: IUserFeedback
+  ) => {
+    return axios.post(`${BASE_URL}/transcripts`, {
+      messages,
+      userInfo,
+      feedback,
+    });
+  },
+
+  generateFeedback: async (messages: Message[]) => {
+    return axios.post(`${BASE_URL}/feedback`, { messages });
   },
 };
+
+export interface IUserFeedback {
+  feedback: string;
+  strengths: string[];
+  weaknesses: string[];
+}
+export interface IUserInfo {
+  name: string;
+  email: string;
+  phone: string;
+  skills: string;
+  experience: string;
+  projects: string;
+}
+
+export const resumeParsingLoadingStates = [
+  {
+    text: "Parsing Resume",
+  },
+  {
+    text: "Analyzing Your Resume",
+  },
+  {
+    text: "Extracting Information",
+  },
+  {
+    text: "Generating Interview Questions",
+  },
+  {
+    text: "Preparing Your Interview",
+  },
+];
+
+export const feedbackAndTranscriptLoadingStates = [
+  {
+    text: "Evaluating Your Interview",
+  },
+  {
+    text: "Evaluating Your Response",
+  },
+  {
+    text: "Generating Your Feedback",
+  },
+  {
+    text: "Saving Your Feedback",
+  },
+  {
+    text: "Saving Transcript",
+  },
+];

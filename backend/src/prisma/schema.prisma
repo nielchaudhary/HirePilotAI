@@ -20,6 +20,9 @@ model Interview {
   id          Int      @id @default(autoincrement())
   interviewId String   @unique
   messages    Json     @default("[]")
-  userInfo    Json     @default("{\"name\": \"\", \"number\": \"\", \"email\": \"\"}")
+  userInfo    Json    
+  feedback    Json 
   createdAt   DateTime @default(now())
 }
+
+

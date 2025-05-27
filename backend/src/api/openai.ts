@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { Logger } from "../utils/logger";
-import { isNullOrUndefined } from "../utils/data";
+import { isNullOrUndefined, IUserInfo } from "../utils/data";
 import {
   generateSystemContent,
   validateRequest,
@@ -11,7 +11,6 @@ import {
 } from "../utils/api-helpers";
 
 import dotenv from "dotenv";
-
 dotenv.config();
 
 const logger = new Logger("openai");
@@ -29,21 +28,21 @@ export const chatCompletionPostHandler = async (
       throw new Error("OPENROUTER_API_KEY is not defined");
     }
 
-    const { message, resume, isInitialLoad } = req.body as {
+    const { message, isInitialLoad, userInfo } = req.body as {
       message: string;
-      resume?: string;
       isInitialLoad: boolean;
+      userInfo?: IUserInfo;
     };
-    const validation = validateRequest(message, resume, isInitialLoad);
-    if (!validation.valid) {
-      res.status(validation.status!).json({ error: validation.error });
-      return;
-    }
+    // const validation = validateRequest(message, userInfo, isInitialLoad);
+    // if (!validation.valid) {
+    //   res.status(validation.status!).json({ error: validation.error });
+    //   return;
+    // }
 
     setupResponseHeaders(res);
 
     const systemContent = generateSystemContent(
-      isInitialLoad ? resume : undefined
+      isInitialLoad ? userInfo : undefined
     );
     const messages = prepareMessages(systemContent, message, isInitialLoad);
 

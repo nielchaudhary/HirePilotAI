@@ -2,7 +2,9 @@ import { isEmpty } from "lodash";
 import {
   feedbackPrompt,
   IInterviewTranscript,
+  IMessage,
   isNullOrUndefined,
+  IUserInfo,
   OPEROUTER_BASE_URL,
   resumeParsingPrompt,
   ROLE,
@@ -15,19 +17,26 @@ import ResumeParser from "simple-resume-parser";
 import fs from "fs";
 import OpenAI from "openai";
 
+import dotenv from "dotenv";
+dotenv.config();
+
 const logger = new Logger("api-helpers");
+
+const openRouterApiKey = process.env.OPENROUTER_API_KEY;
+
+console.log("openRouterApiKey", openRouterApiKey);
 
 const openai = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
+  apiKey: openRouterApiKey,
   defaultHeaders: {
-    Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+    Authorization: `Bearer ${openRouterApiKey}`,
   },
 });
 
 export const validateRequest = (
   message: string,
-  resume: string | undefined,
+  userInfo: IUserInfo | undefined,
   isInitialLoad: boolean
 ) => {
   if ((isNullOrUndefined(message) || isEmpty(message)) && !isInitialLoad) {
@@ -38,7 +47,7 @@ export const validateRequest = (
     };
   }
 
-  if (isInitialLoad && isNullOrUndefined(resume)) {
+  if (isInitialLoad && isNullOrUndefined(userInfo)) {
     return {
       valid: false,
       error: "Missing resume for initial load",
@@ -49,11 +58,13 @@ export const validateRequest = (
   return { valid: true };
 };
 
-export const generateSystemContent = (resume?: string): string => {
-  let systemContent = `You are HirePilot, an AI Interviewer interviewing a candidate for a job based on their skills. You will chat with the candidate and will be provided with the candidate's resume initially where you will get the skills of the candidate. You have to interview the candidate based on the resume skills. You have to question the technologies and the experience of the candidate based on the basis of skills provided by the candidate. YOU SHOULD NOT ANSWER THE TECHNICAL QUESTIONS ASKED BY THE CANDIDATE, YOU SHOULD CONTINUE ASKING QUESTIONS ON BASIS OF THE RESPONSES PROVIDED BY THE CANDIDATE. You have to ask questions on basis of the responses provided by the candidate as well. Keep asking the questions one by one on basis of the response provided by the candidate, stop this loop of asking on one topic after 3-4 questions on one topic and move to other. The Interview should last for no longer than 15 minutes. Structure the interview in such a way that you gain information about the technical skills, experience, and the ability to work in a team. Do not send any additional information other than the interview questions and responses. Do not send responses in bold font either. If the candidate wants to skip a question, you should not ask that question again. If the candidate wants to end the interview, you should not ask any more questions and ask the candidate to click the end interview button.`;
+export const generateSystemContent = (userInfo?: IUserInfo): string => {
+  let systemContent = `You are HirePilot, an AI Interviewer interviewing a candidate for a job based on their skills. You will chat with the candidate and will be provided with the candidate's resume initially where you will get the skills of the candidate. You have to interview the candidate based on the resume skills.You should ask the about the resume skills in depth, and keep questioning the candidate 3-4 questions on one topic. YOU SHOULD NOT ANSWER THE TECHNICAL QUESTIONS ASKED BY THE CANDIDATE, YOU SHOULD CONTINUE ASKING QUESTIONS ON BASIS OF THE RESPONSES PROVIDED BY THE CANDIDATE. You have to ask questions on basis of the responses provided by the candidate as well. Keep asking the questions one by one on basis of the response provided by the candidate, stop this loop of asking on one topic after 3-4 questions on one topic and move to other. The Interview should last for no longer than 15 minutes. Structure the interview in such a way that you gain information about the technical skills, experience, and the ability to work in a team. Do not send any additional information other than the interview questions and responses. Do not send responses in bold font either. If the candidate wants to skip a question, you should not ask that question again. If the candidate wants to end the interview, you should not ask any more questions and ask the candidate to click the end interview button.`;
 
-  if (resume) {
-    systemContent += `\n\nThe candidate's resume in parsed format is: ${resume}. You have to interview the candidate on basis of this resume and keep this in context all the time till the interview ends. You have to parse the user information from the resume provided and confirm it with the user first. userInfo like name, email, phone number, etc is mandatory`;
+  if (userInfo) {
+    systemContent += `\n\nThe candidate's resume in parsed format is: ${JSON.stringify(
+      userInfo
+    )}. You have to interview the candidate on basis of this resume and keep this in context all the time till the interview ends. You have to parse the skills and past work experience of the user from the resume provided`;
   }
 
   return systemContent;
@@ -75,7 +86,7 @@ export const prepareMessages = (
     messages.push({
       role: ROLE.USER,
       content:
-        "Please start the interview with a greeting and your first question based on my resume.",
+        "Please start the interview with a greeting and start asking the questions based on the resume skills that you have got.",
     });
   } else {
     messages.push({
@@ -184,35 +195,86 @@ export const parseResumeFile = async (resumePath: string) => {
 export const generateCompletionUsingAI = async (
   resumePath: string,
   generateFeedback?: boolean,
-  messages?: Pick<IInterviewTranscript, "messages">[]
+  messages?: IMessage[]
 ) => {
   const openRouterApiKey = process.env.OPENROUTER_API_KEY;
-
-  const dataBuffer = fs.readFileSync(resumePath);
-  const data = await pdfParse(dataBuffer);
-  const resumeText = data.text;
 
   if (isNullOrUndefined(openRouterApiKey)) {
     throw new Error("OPENROUTER_API_KEY is not defined");
   }
 
-  let systemContent = resumeParsingPrompt;
+  let systemContent = "";
+  let conversationMessages: IMessage[] = [];
 
-  !isNullOrUndefined(generateFeedback) && generateFeedback
-    ? (systemContent +=
-        feedbackPrompt + `Interview Transcript : ${JSON.stringify(messages)}`)
-    : (systemContent += `Resume Details : ${resumeText}`);
+  if (
+    !generateFeedback &&
+    !isNullOrUndefined(resumePath) &&
+    resumePath.trim() !== ""
+  ) {
+    try {
+      const dataBuffer = fs.readFileSync(resumePath);
+      const data = await pdfParse(dataBuffer);
+      const resumeText = data.text;
+      systemContent = resumeParsingPrompt + `Resume Details : ${resumeText}`;
+    } catch (error) {
+      logger.error("Error reading resume file:", error);
+      throw new Error(`Failed to read resume file: ${resumePath}`);
+    }
+  } else if (
+    generateFeedback &&
+    !isNullOrUndefined(messages) &&
+    messages.length > 0
+  ) {
+    systemContent = feedbackPrompt;
 
-  const completions = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    response_format: { type: "json_object" },
-    messages: [
+    conversationMessages = messages
+      .filter(
+        (msg) =>
+          msg.content &&
+          msg.content.trim() !== "" &&
+          msg.content !== "Thinking..."
+      )
+      .map((msg) => ({
+        role: msg.role === ROLE.USER ? ROLE.USER : ROLE.SYSTEM,
+        content: msg.content,
+        id: msg.id,
+        timestamp: msg.timestamp,
+      }));
+  } else {
+    logger.error(
+      "either provide resumePath for parsing or messages for feedback generation"
+    );
+  }
+
+  try {
+    const apiMessages = [
       {
-        role: "user",
+        role: ROLE.SYSTEM,
         content: systemContent,
       },
-    ],
-  });
-  logger.info("Completions : ", completions.choices[0].message.content);
-  return completions.choices[0].message.content;
+      ...(generateFeedback ? conversationMessages : []),
+      ...(generateFeedback
+        ? [
+            {
+              role: ROLE.USER,
+              content:
+                "Please analyze the above interview conversation and provide feedback in the requested JSON format.",
+            },
+          ]
+        : []),
+    ];
+
+    const completions = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: apiMessages,
+    });
+
+    const content = completions.choices[0].message.content;
+
+    return content;
+  } catch (error) {
+    logger.error("Error calling OpenAI API:", error);
+    throw new Error("Failed to generate AI completion");
+  }
 };

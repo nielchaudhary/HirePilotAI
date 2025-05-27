@@ -16,10 +16,17 @@ export enum ROLE {
   SYSTEM = "system",
 }
 
+export interface IUserFeedback {
+  feedback: string;
+  strengths: string[];
+  weaknesses: string[];
+}
+
 export interface IInterviewTranscript {
   id: string;
   interviewId: string;
   userInfo: IUserInfo;
+  userFeedback: IUserFeedback;
   messages: IMessage[];
 }
 
@@ -27,6 +34,9 @@ export interface IUserInfo {
   name: string;
   email: string;
   phone: string;
+  skills: string[];
+  experience: string[];
+  projects: string[];
 }
 
 export const resumeParsingPrompt = `Extract the following information from this resume and return it as JSON:
@@ -34,6 +44,10 @@ export const resumeParsingPrompt = `Extract the following information from this 
     "name" : "",
     "email" : "",
     "phone" : "",
+    "skills" : [],
+    "experience" : [],
+    "projects" : [],
+   
     
 }
 `;
@@ -41,8 +55,8 @@ export const resumeParsingPrompt = `Extract the following information from this 
 export const feedbackPrompt = `You are Hirepilot, an AI Interviewer. You have to generate a feedback for the messages sent by role user (which is the candidate) and the messages sent by role assistant (which is you). Provide a JSON Response with the following format:
 {
     "feedback" : "",
-    "technical and personality strengths" : [minimum 2 & maximum 3],
-    "technical and personality weaknesses" : [minimum 2 & maximum 3],
+    "strengths" : [minimum 2 & maximum 3],
+    "weaknesses" : [minimum 2 & maximum 3],
     
 }
 Generate a feedback for the interview based on the following transcript provided to you:

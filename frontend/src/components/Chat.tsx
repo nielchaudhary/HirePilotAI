@@ -8,12 +8,16 @@ import {
   createMessage,
   createThinkingMessage,
   ERROR_MESSAGES,
+  feedbackAndTranscriptLoadingStates,
   ROLE,
   THINKING_MESSAGE,
   type ChatProps,
+  type IUserFeedback,
+  type IUserInfo,
   type Message,
 } from "../lib/data";
 import { useAutoScroll, useStreamingResponse } from "../lib/hooks";
+import { MultiStepLoader } from "./MultiStepLoader";
 
 // Components
 const PDFViewer = ({ pdfUrl }: { pdfUrl: string }) => {
@@ -80,11 +84,11 @@ const MessageBubble = ({ message }: { message: Message }) => {
   );
 };
 
-const EmptyState = ({ parsedResume }: { parsedResume: string }) => (
+const EmptyState = ({ userInfo }: { userInfo: IUserInfo }) => (
   <div className="h-full flex items-center justify-center">
     <div className="text-center space-y-4 max-w-md">
       <p className="text-gray-500">
-        {parsedResume
+        {userInfo
           ? "Interview will start automatically..."
           : "Upload your resume to begin the interview"}
       </p>
@@ -134,11 +138,12 @@ const ChatInput = ({
 );
 
 // Main component
-export const Chat = ({ pdfUrl, parsedResume }: ChatProps) => {
+export const Chat = ({ pdfUrl, userInfo }: ChatProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isInterviewStarted, setIsInterviewStarted] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
+  const [fetchingResponse, setFetchingResponse] = useState(false);
 
   const navigate = useNavigate();
   const messagesEndRef = useAutoScroll(messages);
@@ -153,7 +158,7 @@ export const Chat = ({ pdfUrl, parsedResume }: ChatProps) => {
 
   // Interview initialization
   const startInterview = useCallback(async () => {
-    if (isInterviewStarted || !parsedResume) return;
+    if (isInterviewStarted || !userInfo) return;
 
     setIsInterviewStarted(true);
     setIsThinking(true);
@@ -164,7 +169,7 @@ export const Chat = ({ pdfUrl, parsedResume }: ChatProps) => {
     const assistantMessageId = `${Date.now()}-interview-start`;
 
     try {
-      const response = await chatAPI.sendMessage("", parsedResume, true);
+      const response = await chatAPI.sendMessage("", userInfo, true);
       setIsThinking(false);
 
       // Initialize empty response message
@@ -185,7 +190,7 @@ export const Chat = ({ pdfUrl, parsedResume }: ChatProps) => {
     } finally {
       setIsThinking(false);
     }
-  }, [isInterviewStarted, parsedResume, streamResponse]);
+  }, [isInterviewStarted, userInfo, streamResponse]);
 
   // send user message
   const handleSubmit = useCallback(
@@ -203,7 +208,7 @@ export const Chat = ({ pdfUrl, parsedResume }: ChatProps) => {
       const assistantMessageId = `${Date.now()}-response`;
 
       try {
-        const response = await chatAPI.sendMessage(input);
+        const response = await chatAPI.sendMessage(input, userInfo);
         setIsThinking(false);
 
         // replace thinking message with empty response
@@ -243,76 +248,94 @@ export const Chat = ({ pdfUrl, parsedResume }: ChatProps) => {
       e.preventDefault();
 
       try {
-        toast.success("Interview Completed, please wait for a while");
-        await chatAPI.saveTranscript(messages);
+        toast.success("Processing Interview, Please Do Not Reload the Page");
+        setFetchingResponse(true);
+        const userFeedback = (await chatAPI.generateFeedback(messages)) as {
+          data: IUserFeedback;
+        };
+        await chatAPI.saveTranscript(messages, userInfo, userFeedback.data);
         navigate("/thank-you");
       } catch (error) {
+        setFetchingResponse(false);
         console.error("Error saving transcript:", error);
         toast.error("Error saving interview transcript");
+      } finally {
+        setFetchingResponse(false);
       }
     },
-    [messages, navigate]
+    [messages, navigate, userInfo]
   );
 
   useEffect(() => {
-    if (parsedResume && !isInterviewStarted) {
+    if (userInfo && !isInterviewStarted) {
       startInterview();
     }
-  }, [parsedResume, isInterviewStarted, startInterview]);
+  }, [userInfo, isInterviewStarted, startInterview]);
 
   return (
-    <div className="flex flex-col h-[90vh] w-full max-w-7xl bg-white rounded-xl shadow-2xl overflow-hidden">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-[#0A1929] via-[#0F2942] to-[#143556] text-white p-6 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-bold font-serif">HirePilot AI</h2>
-        </div>
-        <button
-          className="relative inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200 cursor-pointer"
-          onClick={handleExitInterview}
-        >
-          <span className="flex items-center">
-            <IconLogout className="w-4 h-4 mr-1.5" />
-            Exit Interview
-          </span>
-        </button>
-      </header>
-
-      {/* Main Content */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* PDF Viewer */}
-        <div className="w-1/2 flex flex-col">
-          <div className="flex-1 overflow-hidden bg-gray-50">
-            <PDFViewer pdfUrl={pdfUrl} />
-          </div>
-        </div>
-
-        {/* Chat Interface */}
-        <div className="w-1/2 flex flex-col bg-[#121212]">
-          {/* Messages */}
-          <div className="flex-1 overflow-x-hidden overflow-y-auto p-6 space-y-4 bg-black">
-            {!hasMessages ? (
-              <EmptyState parsedResume={parsedResume} />
-            ) : (
-              <>
-                {messages.map((message) => (
-                  <MessageBubble key={message.id} message={message} />
-                ))}
-                <div ref={messagesEndRef} />
-              </>
-            )}
-          </div>
-
-          {/* Input Form */}
-          <ChatInput
-            input={input}
-            setInput={setInput}
-            onSubmit={handleSubmit}
-            isInterviewStarted={isInterviewStarted}
-            isThinking={isThinking}
+    <>
+      <div className="flex flex-col h-[90vh] w-full max-w-7xl bg-black rounded-xl shadow-2xl overflow-hidden">
+        {fetchingResponse ? (
+          <MultiStepLoader
+            loadingStates={feedbackAndTranscriptLoadingStates}
+            loading={fetchingResponse}
           />
-        </div>
+        ) : (
+          <>
+            {/* Header */}
+            <header className="bg-gradient-to-r from-[#0A1929] via-[#0F2942] to-[#143556] text-white p-6 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold font-serif">HirePilot AI</h2>
+              </div>
+              <button
+                className="relative inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200 cursor-pointer"
+                onClick={handleExitInterview}
+              >
+                <span className="flex items-center">
+                  <IconLogout className="w-4 h-4 mr-1.5" />
+                  Exit Interview
+                </span>
+              </button>
+            </header>
+
+            {/* Main Content */}
+            <div className="flex flex-1 overflow-hidden">
+              {/* PDF Viewer */}
+              <div className="w-1/2 flex flex-col">
+                <div className="flex-1 overflow-hidden bg-gray-50">
+                  <PDFViewer pdfUrl={pdfUrl} />
+                </div>
+              </div>
+
+              {/* Chat Interface */}
+              <div className="w-1/2 flex flex-col bg-[#121212]">
+                {/* Messages */}
+                <div className="flex-1 overflow-x-hidden overflow-y-auto p-6 space-y-4 bg-black">
+                  {!hasMessages ? (
+                    <EmptyState userInfo={userInfo} />
+                  ) : (
+                    <>
+                      {messages.map((message) => (
+                        <MessageBubble key={message.id} message={message} />
+                      ))}
+                      <div ref={messagesEndRef} />
+                    </>
+                  )}
+                </div>
+
+                {/* Input Form */}
+                <ChatInput
+                  input={input}
+                  setInput={setInput}
+                  onSubmit={handleSubmit}
+                  isInterviewStarted={isInterviewStarted}
+                  isThinking={isThinking}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
-    </div>
+    </>
   );
 };
