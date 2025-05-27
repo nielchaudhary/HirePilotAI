@@ -132,3 +132,11 @@ export const feedbackAndTranscriptLoadingStates = [
     text: "Saving Transcript",
   },
 ];
+
+export const COMPLETION_PHRASES = [
+  "thank you for attending",
+  "interview completed",
+  "processing your results",
+  "interview finished",
+  "thankyou for the attending",
+];

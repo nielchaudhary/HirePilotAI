@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { IconLogout } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-
 import {
   chatAPI,
+  COMPLETION_PHRASES,
   createErrorMessage,
   createMessage,
   createThinkingMessage,
@@ -26,39 +26,38 @@ export const Chat = ({ userInfo }: ChatProps) => {
   const [isInterviewStarted, setIsInterviewStarted] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [fetchingResponse, setFetchingResponse] = useState(false);
+  const [completionHandled, setCompletionHandled] = useState(false);
 
   const navigate = useNavigate();
   const messagesEndRef = useAutoScroll(messages);
   const { streamResponse } = useStreamingResponse();
 
-  const hasMessages = useMemo(() => messages.length > 0, [messages.length]);
-  const canSubmit = useMemo(
-    () => input.trim() && isInterviewStarted && !isThinking,
-    [input, isInterviewStarted, isThinking]
-  );
+  const messagesRef = useRef<Message[]>([]);
+  messagesRef.current = messages;
+
+  const hasMessages = messages.length > 0;
+  const canSubmit = input.trim() && isInterviewStarted && !isThinking;
+
+  const createAssistantMessage = useCallback(() => {
+    return createMessage(ROLE.SYSTEM, "", `${Date.now()}-response`);
+  }, []);
 
   const startInterview = useCallback(async () => {
     if (isInterviewStarted || !userInfo) return;
 
     setIsInterviewStarted(true);
     setIsThinking(true);
-
-    const thinkingMessage = createThinkingMessage();
-    setMessages([thinkingMessage]);
-
-    const assistantMessageId = `${Date.now()}-interview-start`;
+    setMessages([createThinkingMessage()]);
 
     try {
       const response = await chatAPI.sendMessage("", userInfo, true);
-      setIsThinking(false);
-
-      const emptyResponse = createMessage(ROLE.SYSTEM, "", assistantMessageId);
-      setMessages([emptyResponse]);
+      const assistantMessage = createAssistantMessage();
+      setMessages([assistantMessage]);
 
       await streamResponse(response, (content) => {
         setMessages((prev) =>
           prev.map((msg) =>
-            msg.id === assistantMessageId ? { ...msg, content } : msg
+            msg.id === assistantMessage.id ? { ...msg, content } : msg
           )
         );
       });
@@ -68,7 +67,7 @@ export const Chat = ({ userInfo }: ChatProps) => {
     } finally {
       setIsThinking(false);
     }
-  }, [isInterviewStarted, userInfo, streamResponse]);
+  }, [isInterviewStarted, userInfo, streamResponse, createAssistantMessage]);
 
   const handleInputSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -77,31 +76,23 @@ export const Chat = ({ userInfo }: ChatProps) => {
 
       const userMessage = createMessage(ROLE.USER, input);
       const thinkingMessage = createThinkingMessage();
+      const assistantMessage = createAssistantMessage();
 
       setMessages((prev) => [...prev, userMessage, thinkingMessage]);
       setInput("");
       setIsThinking(true);
 
-      const assistantMessageId = `${Date.now()}-response`;
-
       try {
         const response = await chatAPI.sendMessage(input, userInfo);
-        setIsThinking(false);
-
-        const emptyResponse = createMessage(
-          ROLE.SYSTEM,
-          "",
-          assistantMessageId
-        );
         setMessages((prev) => [
           ...prev.filter((msg) => msg.id !== thinkingMessage.id),
-          emptyResponse,
+          assistantMessage,
         ]);
 
         await streamResponse(response, (content) => {
           setMessages((prev) =>
             prev.map((msg) =>
-              msg.id === assistantMessageId ? { ...msg, content } : msg
+              msg.id === assistantMessage.id ? { ...msg, content } : msg
             )
           );
         });
@@ -115,7 +106,7 @@ export const Chat = ({ userInfo }: ChatProps) => {
         setIsThinking(false);
       }
     },
-    [canSubmit, input, streamResponse, userInfo]
+    [canSubmit, input, streamResponse, userInfo, createAssistantMessage]
   );
 
   const handleExitInterview = useCallback(
@@ -123,18 +114,23 @@ export const Chat = ({ userInfo }: ChatProps) => {
       e: React.MouseEvent<HTMLButtonElement> | { preventDefault: () => void }
     ) => {
       e.preventDefault();
-
       if (fetchingResponse) return;
 
       try {
         setFetchingResponse(true);
         toast.success("Processing Interview, Please Do Not Reload the Page");
 
-        const userFeedback = (await chatAPI.generateFeedback(messages)) as {
+        const userFeedback = (await chatAPI.generateFeedback(
+          messagesRef.current
+        )) as {
           data: IUserFeedback;
         };
 
-        await chatAPI.saveTranscript(messages, userInfo, userFeedback.data);
+        await chatAPI.saveTranscript(
+          messagesRef.current,
+          userInfo,
+          userFeedback.data
+        );
         navigate("/thank-you");
       } catch (error) {
         setFetchingResponse(false);
@@ -142,38 +138,30 @@ export const Chat = ({ userInfo }: ChatProps) => {
         toast.error("Error saving interview transcript");
       }
     },
-    [messages, navigate, userInfo, fetchingResponse]
+    [navigate, userInfo, fetchingResponse]
   );
 
   useEffect(() => {
-    const checkForCompletion = () => {
-      if (messages.length === 0 || fetchingResponse) return;
+    if (messages.length === 0 || fetchingResponse || completionHandled) return;
 
-      const lastMessage = messages[messages.length - 1];
-      const completionPhrases = [
-        "thank you for attending",
-        "interview completed",
-        "processing your results",
-        "interview finished",
-        "thankyou for the attending",
-      ];
-
-      const isCompletionMessage = completionPhrases.some((phrase) =>
+    const lastMessage = messages[messages.length - 1];
+    const isCompletionMessage =
+      lastMessage.role === ROLE.SYSTEM &&
+      COMPLETION_PHRASES.some((phrase) =>
         lastMessage.content.toLowerCase().includes(phrase)
       );
 
-      if (isCompletionMessage && lastMessage.role === ROLE.SYSTEM) {
-        toast.success("Interview completed. Processing your results...");
-        setTimeout(() => {
-          handleExitInterview({
-            preventDefault: () => {},
-          } as React.MouseEvent<HTMLButtonElement>);
-        }, 2000);
-      }
-    };
-
-    checkForCompletion();
-  }, [messages, fetchingResponse, handleExitInterview]);
+    if (isCompletionMessage) {
+      setCompletionHandled(true);
+      toast.success("Interview completed. Processing your results...");
+      const timer = setTimeout(() => {
+        handleExitInterview({
+          preventDefault: () => {},
+        } as React.MouseEvent<HTMLButtonElement>);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [messages, fetchingResponse, handleExitInterview, completionHandled]);
 
   useEffect(() => {
     if (userInfo && !isInterviewStarted) {
