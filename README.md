@@ -84,14 +84,14 @@ git clone <repository-url>
 ## Available Scripts
 
 ### Backend
-- `pnpm dev`: Start the development server with hot-reload
+- `pnpm dev`: Start the development server with hot-reload //use this to run the application
 - `pnpm build`: Build the TypeScript code
 - `pnpm start`: Start the production server
 - `pnpm lint:check`: Run ESLint to check for code quality issues
 - `npx prisma studio`: Open Prisma Studio for database management
 
 ### Frontend
-- `npm run dev`: Start the development server
+- `npm run dev`: Start the development server //to run the frontend
 - `npm run build`: Build the application for production
 - `npm run preview`: Preview the production build locally
 - `npm run lint`: Run ESLint
@@ -102,30 +102,79 @@ git clone <repository-url>
 Create a `.env` file in the `backend` directory with the following variables:
 
 ```
+
+Your Supabase DB Url :
 DATABASE_URL="postgresql://user:password@localhost:5432/ninja?schema=public"
-PORT=3001
+
+Your OpenRouter API Key
+OPENROUTER_API_KEY="your-openrouter-api-key"
+
 # Add other required environment variables here
 ```
 
-### Frontend
-Create a `.env` file in the `frontend` directory if needed:
-
-```
-VITE_API_URL=http://localhost:3001
-# Add other frontend environment variables here
-```
 
 ## Database
 
-This project uses PostgreSQL with Prisma ORM. After setting up your `.env` file with the correct `DATABASE_URL`:
+This project uses PostgreSQL with Prisma ORM. After setting up your `.env` file with the correct `DATABASE_URL`.
 
-1. Run migrations:
-   ```bash
-   npx prisma migrate dev
+Here's a clean, concise **README.md** template for your project, explaining how to set it up with a new Supabase Postgres database:
+
+---
+
+# Project Setup Guide
+
+This project uses **Supabase (Postgres)** + **Prisma** for the database layer. Follow these steps to run it with your own Supabase instance.
+
+## Prerequisites
+- Node.js (v18+ recommended)
+- A Supabase account ([sign up here](https://supabase.com))
+
+---
+
+## 1. Set Up Supabase Postgres Database
+1. Create a new project at [Supabase Dashboard](https://app.supabase.com/projects).
+2. Go to **Settings → Database** and copy your connection string (looks like):
+   ```
+   postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
    ```
 
-2. To view and edit your database, run:
-   ```bash
-   npx prisma studio
-   ```
-# HirePilotAI
+## 2. Configure Environment
+
+DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres"
+
+*(Replace values in square brackets with your actual credentials.)*
+
+
+## 4. Set Up Database
+Push the schema to your Supabase database:
+```bash
+npx prisma db push
+```
+
+(Optional) Seed sample data if available:
+```bash
+npx prisma db seed
+```
+
+## 5. Generate Prisma Client
+```bash
+npx prisma generate
+```
+
+## 6. Run the Project
+```bash
+npm run dev
+# or check package.json for custom commands
+```
+
+
+## Project Structure
+```
+/prisma
+  schema.prisma    # Database schema definition
+  /migrations     # Migration history (if applicable)
+.env.example      # Environment template
+```
+
+---
+
