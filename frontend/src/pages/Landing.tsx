@@ -46,8 +46,6 @@ export const Landing = () => {
           },
         })) as { data: IUserInfo };
 
-        console.log("UserInfo : ", response.data);
-
         navigate("/interview", {
           state: {
             pdfUrl,
