@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback } from "react";
 import type { Message } from "./data";
 
+// so basically, whenever the useRef is initialised to access the DOM element for example messageRef / autoScrolling, it will get rendered once on the component tree, and when the value i.e messageRef.current gets changed, it will basically just change the .current value, which is the regular object property without re-rendering the component.
 export const useAutoScroll = (messages: Message[]) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -10,6 +11,10 @@ export const useAutoScroll = (messages: Message[]) => {
 
   return messagesEndRef;
 };
+
+//useCallback to memoize the function, since the streaming component does not change often, we have used it.
+// In JavaScript, every function declaration creates a NEW function object.
+// useCallback is used to memoize the function, so that it is not recreated on every render.
 
 export const useStreamingResponse = () => {
   const streamResponse = useCallback(
